@@ -1,0 +1,24 @@
+# Virtual Environment
+venv/
+.venv/
+env/
+
+# Python Cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Large Archives & Datasets
+*.rar
+*.zip
+*.tar.gz
+test/
+
+# Snapshots / Output images
+snapshot_*.jpg
+output_*.mp4
+
+# IDE / System
+.vscode/
+.idea/
+.DS_Store
