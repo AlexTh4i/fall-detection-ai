@@ -252,4 +252,70 @@ namespace FallDetectionBackend.DTOs
 }
 ```
 
+### 10.4. Kiến trúc SignalR Hub & Alert Controller (.NET Core)
+Để phát cảnh báo thời gian thực từ C# Backend tới Web/Mobile Dashboard mà không cần polling:
+
+```csharp
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
+using FallDetectionBackend.DTOs;
+
+namespace FallDetectionBackend.Hubs
+{
+    public class FallAlertHub : Hub
+    {
+        // Hub cho Web Client / Mobile Dashboard lắng nghe sự kiện
+        public async Task JoinCameraGroup(string cameraId)
+        {
+            await Groups.AddToGroupAsync(Context.ConnectionId, cameraId);
+        }
+    }
+}
+
+namespace FallDetectionBackend.Controllers
+{
+    [ApiController]
+    [Route("api/alerts")]
+    public class AlertsController : ControllerBase
+    {
+        private readonly IHubContext<FallAlertHub> _hubContext;
+        private readonly ILogger<AlertsController> _logger;
+
+        public AlertsController(IHubContext<FallAlertHub> hubContext, ILogger<AlertsController> logger)
+        {
+            _hubContext = hubContext;
+            _logger = logger;
+        }
+
+        [HttpPost("fall")]
+        public async Task<IActionResult> ReceiveFallAlert([FromBody] FallAlertDto alert)
+        {
+            _logger.LogWarning($"[ALERT] Nhan canh bao TE NGA: TrackID={alert.Person.TrackId}, Cam={alert.CameraId}");
+            
+            // 1. Luu vao Database (SQL Server / PostgreSQL / SQLite)
+            // await _alertRepository.SaveAsync(alert);
+
+            // 2. Ban su kien Realtime qua SignalR toi Dashboard
+            await _hubContext.Clients.All.SendAsync("OnFallDetected", alert);
+
+            // 3. (Tuy chon) Gui Push Notification toi Zalo/Telegram/Firebase FCM
+            // await _notificationService.SendEmergencyAsync(alert);
+
+            return Ok(new { success = true, message = "Alert processed successfully" });
+        }
+
+        [HttpPost("recovered")]
+        public async Task<IActionResult> ReceiveRecoveredAlert([FromBody] FallAlertDto alert)
+        {
+            _logger.LogInformation($"[RECOVERED] Nan nhan TrackID={alert.Person.TrackId} da dung day.");
+            
+            // Phat tin hieu huy canh bao tren Dashboard
+            await _hubContext.Clients.All.SendAsync("OnPersonRecovered", alert);
+
+            return Ok(new { success = true, message = "Recovery event logged" });
+        }
+    }
+}
+```
+
 

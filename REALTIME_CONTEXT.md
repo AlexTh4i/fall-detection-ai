@@ -235,6 +235,42 @@ def send_alert_to_csharp(track_id, state, angle, ar, box, frame):
         alert_queue.put(payload)
 ```
 
+### 10.1. Điểm cắm sự kiện vào vòng lặp xử lý Camera (`realtime_yolo_fall_detection.py`)
+Trong hàm `PersonTracker.update(...)`:
+- **Khi chuyển sang `STATE_CONFIRMED`:**
+  ```python
+  send_alert_to_csharp(self.track_id, "FALL_CONFIRMED", body_angle, self.aspect_ratio, box, current_frame)
+  ```
+- **Khi phục hồi từ `STATE_CONFIRMED` về `STATE_NORMAL` (Nạn nhân đứng dậy):**
+  ```python
+  send_alert_to_csharp(self.track_id, "NORMAL", body_angle, self.aspect_ratio, box, None)
+  ```
+
+### 10.2. Nhận cảnh báo tức thời phía Web Frontend (JavaScript SignalR Client)
+```javascript
+const connection = new signalR.HubConnectionBuilder()
+    .withUrl("http://localhost:5000/fallAlertHub")
+    .withAutomaticReconnect()
+    .build();
+
+// Lắng nghe sự kiện té ngã khẩn cấp
+connection.on("OnFallDetected", (alert) => {
+    console.error("CẢNH BÁO TÉ NGÃ KHẨN CẤP:", alert);
+    // 1. Kích hoạt chuông báo động trên trình duyệt
+    // 2. Hiển thị modal popup kèm hình ảnh snapshot Base64
+    document.getElementById("alert-modal").style.display = "block";
+    document.getElementById("snapshot-img").src = alert.snapshotBase64;
+});
+
+// Lắng nghe sự kiện nạn nhân đã tự đứng dậy / hồi phục
+connection.on("OnPersonRecovered", (alert) => {
+    console.log("Nạn nhân đã đứng dậy:", alert);
+    document.getElementById("alert-modal").style.display = "none";
+});
+
+connection.start().then(() => console.log("Đã kết nối tới SignalR Hub C# Backend"));
+```
+
 ---
 
 ## 11. CẬP NHẬT MÔ HÌNH THẾ HỆ MỚI: YOLO26-POSE & KHẢ NĂNG TRIỂN KHAI BIÊN (EDGE AI)
