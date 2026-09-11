@@ -235,4 +235,21 @@ def send_alert_to_csharp(track_id, state, angle, ar, box, frame):
         alert_queue.put(payload)
 ```
 
+---
 
+## 11. CẬP NHẬT MÔ HÌNH THẾ HỆ MỚI: YOLO26-POSE & KHẢ NĂNG TRIỂN KHAI BIÊN (EDGE AI)
+
+### 11.1. Nâng cấp mô hình: YOLOv8-Pose -> YOLO26-Pose
+- **Model sử dụng:** `yolo26n-pose.pt` (thay thế cho `yolov8n-pose.pt`).
+- **Ưu thế kiến trúc của YOLO26:**
+  - **Native NMS-Free:** Dự đoán End-to-End trực tiếp không cần thuật toán Non-Maximum Suppression, loại bỏ điểm nghẽn độ trễ khi có nhiều người trong khung hình.
+  - **Loại bỏ DFL (Distribution Focal Loss):** Giúp cấu trúc model head nhẹ hơn, giảm thiểu tính toán regression bounding box, tăng tốc độ tính toán suy luận trên CPU và thiết bị biên lên đến 43%.
+  - **STAL (Small-Target-Aware Label Assignment):** Tăng khả năng nhận diện các điểm khớp xương nhỏ khi đối tượng ở xa hoặc khi ngã nằm sát bề mặt sàn.
+- **Tương thích:** Giữ nguyên chuẩn 17 keypoints COCO, tương thích hoàn toàn với thuật toán phân tích góc nghiêng và FSM trạng thái hiện hữu mà không cần sửa đổi logic.
+
+### 11.2. Khảo sát khả năng triển khai trên Vi điều khiển ESP32
+- **Đánh giá thực tế:** Vi điều khiển dòng MCU như ESP32 / ESP32-CAM / ESP32-S3 (RAM 512KB - 8MB PSRAM, xung nhịp ~240MHz) **không đủ tài nguyên phần cứng** để chạy trực tiếp mô hình Deep Learning phức tạp như YOLO26-Pose (cần tối thiểu 500MB - 1GB RAM và hàng tỷ phép tính FLOPs).
+- **Mô hình triển khai phân tán tối ưu cho NCKH:**
+  - **Mô hình 1 (ESP32-CAM làm Video Streamer):** ESP32-CAM chỉ đảm nhiệm việc thu hình và phát luồng video MJPEG qua Wi-Fi. Máy trạm/Mini PC đóng vai trò Edge Server nhận luồng để chạy YOLO26 và đưa ra quyết định.
+  - **Mô hình 2 (ESP32 làm Bộ chấp hành Cảnh báo - Edge Actuator):** Máy tính chạy YOLO26 gửi tín hiệu kích hoạt cảnh báo (qua MQTT/Socket/Serial) đến ESP32 để bật còi báo, đèn chớp khẩn cấp hoặc gửi tin nhắn SOS.
+  - **Thiết bị biên thay thế cho xử lý On-Device AI độc lập:** NVIDIA Jetson Orin Nano, Raspberry Pi 5 kết hợp AI Kit (Hailo-8L NPU), hoặc Orange Pi 5 (RK3588 NPU).

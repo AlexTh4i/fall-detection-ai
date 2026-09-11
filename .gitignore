@@ -22,3 +22,6 @@ output_*.mp4
 .vscode/
 .idea/
 .DS_Store
+
+# Weights / Model Checkpoints
+*.pt
