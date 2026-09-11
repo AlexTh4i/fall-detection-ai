@@ -23,5 +23,7 @@ output_*.mp4
 .idea/
 .DS_Store
 
-# Weights / Model Checkpoints
+# Weights / Model Checkpoints (allow lightweight nano pose models)
 *.pt
+!yolo26n-pose.pt
+!yolov8n-pose.pt
