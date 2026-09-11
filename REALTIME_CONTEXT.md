@@ -5,13 +5,13 @@
 
 ## 1. TỔNG QUAN HỆ THỐNG REAL-TIME
 - **Tên module:** Hệ thống giám sát và nhận diện té ngã theo thời gian thực (Real-time Intelligent Fall Detection System).
-- **File thực thi chính:** [`realtime_yolo_fall_detection.py`](file:///d:/NCKH/fall-detection-ai/realtime_yolo_fall_detection.py)
+- **File thực thi chính:** [`realtime_yolo_fall_detection.py`](file:///Users/thai/nhan_dien_te_nga/fall-detection-ai/realtime_yolo_fall_detection.py)
 - **Mục tiêu:**
   - Tiếp nhận và xử lý luồng hình ảnh trực tiếp từ Webcam/Camera giám sát (RTSP/USB) với tốc độ khung hình cao (30 - 60+ FPS).
   - Giám sát đồng thời nhiều người (Multi-Person Tracking) trong cùng một khung hình.
   - Phân biệt chính xác giữa té ngã thật sự và các hành động bình thường (ngồi xuống, cúi người, nằm nghỉ có chủ đích).
   - Tự động nhận diện khi nạn nhân đứng dậy phục hồi để đưa hệ thống về trạng thái bình thường.
-  - Sẵn sàng kích hoạt các giao thức cảnh báo khẩn cấp (MQTT, Webhook, REST API, Còi báo động).
+  - Sẵn sàng kích hoạt các giao thức cảnh báo khẩn cấp tới **Backend C# (.NET Core Web API / SignalR)** thông qua Background Worker Thread (không làm giảm FPS camera).
 
 ---
 
@@ -160,21 +160,79 @@ Dang tai model YOLO-Pose...
 
 ---
 
-## 8. HƯỚNG DẪN TÍCH HỢP HỆ THỐNG IoT & SERVER
-Khi trạng thái chuyển sang `FALL_CONFIRMED`, hệ thống sẵn sàng chèn code kích hoạt cảnh báo:
-```python
-# Ví dụ mẫu tích hợp Webhook / REST API
-import requests
+## 9. THÔNG TIN THƯ VIỆN & TẬP DỮ LIỆU HUẤN LUYỆN (DATASET & PRETRAINED MODEL)
+- **Tập dữ liệu mặc định:** **COCO 2017 Keypoint Detection Dataset** (`coco-pose`).
+- **Nguồn gốc:** Train chính thức bởi Ultralytics trên 118,287 ảnh thực tế với 17 điểm khớp xương chuẩn COCO.
+- **Tải weights model:** Tự động tải `yolov8n-pose.pt` (6.8MB) khi khởi chạy lần đầu.
+- **Link tài liệu chính thức:**
+  - [Ultralytics Pose Datasets](https://docs.ultralytics.com/datasets/pose/)
+  - [COCO Official Keypoint Task](https://cocodataset.org/#keypoints-2017)
 
-def trigger_emergency_alert(track_id, timestamp, snapshot_path=None):
+---
+
+## 10. HƯỚNG DẪN TÍCH HỢP HỆ THỐNG BACKEND C# (.NET CORE)
+Khi trạng thái chuyển sang `FALL_CONFIRMED` hoặc `RECOVERED`, hệ thống đẩy bản tin JSON sang C# Backend. Để **tránh giảm FPS của camera**, sử dụng một **Worker Thread ngầm** kết hợp với hàng đợi `queue.Queue`:
+
+```python
+import queue
+import threading
+import requests
+import base64
+import time
+import cv2
+
+# Cấu hình C# Backend
+BACKEND_ALERT_URL = "http://localhost:5000/api/alerts/fall"
+CAMERA_ID = "CAM_01"
+
+alert_queue = queue.Queue(maxsize=20)
+
+def backend_sender_worker():
+    """Luồng phụ gửi HTTP sang C# Backend mà không gây nghẽn/tụt FPS camera"""
+    while True:
+        payload = alert_queue.get()
+        if payload is None:
+            break
+        try:
+            res = requests.post(BACKEND_ALERT_URL, json=payload, timeout=2.5)
+            print(f"[C# BACKEND] Gửi cảnh báo thành công (Status: {res.status_code})")
+        except Exception as err:
+            print(f"[C# BACKEND ERROR] Không thể kết nối tới Backend: {err}")
+        alert_queue.task_done()
+
+# Khởi động thread gửi nền
+sender_thread = threading.Thread(target=backend_sender_worker, daemon=True)
+sender_thread.start()
+
+def send_alert_to_csharp(track_id, state, angle, ar, box, frame):
+    """Đóng gói dữ liệu chuẩn PascalCase/camelCase gửi cho C# Backend"""
+    b64_str = None
+    if frame is not None:
+        success, buffer = cv2.imencode('.jpg', frame, [int(cv2.IMWRITE_JPEG_QUALITY), 75])
+        if success:
+            b64_str = f"data:image/jpeg;base64,{base64.b64encode(buffer).decode('utf-8')}"
+
     payload = {
-        "event": "FALL_CONFIRMED",
-        "person_id": track_id,
-        "timestamp": timestamp,
-        "device_id": "CAMERA_01_LIVING_ROOM"
+        "eventId": f"evt_{int(time.time() * 1000)}",
+        "eventType": "FallConfirmed" if state == "FALL_CONFIRMED" else "Recovered",
+        "severity": "Critical" if state == "FALL_CONFIRMED" else "Info",
+        "timestamp": time.strftime('%Y-%m-%dT%H:%M:%S+07:00'),
+        "cameraId": CAMERA_ID,
+        "person": {
+            "trackId": int(track_id),
+            "state": state,
+            "bodyAngle": round(float(angle), 1) if angle is not None else 0.0,
+            "aspectRatio": round(float(ar), 2) if ar is not None else 0.0,
+            "boundingBox": {
+                "x1": int(box[0]), "y1": int(box[1]),
+                "x2": int(box[2]), "y2": int(box[3])
+            } if box is not None else None
+        },
+        "snapshotBase64": b64_str
     }
-    try:
-        requests.post("http://your-iot-gateway/api/v1/alerts", json=payload, timeout=2)
-    except Exception as e:
-        print(f"Loi gui canh bao IoT: {e}")
+
+    if not alert_queue.full():
+        alert_queue.put(payload)
 ```
+
+

@@ -151,10 +151,16 @@ class PersonTracker:
 
 
 def run_realtime_fall_detection(cam_index=0, model_path=MODEL_NAME):
-    # Kiem tra GPU CUDA
-    has_cuda = torch.cuda.is_available()
-    device = 0 if has_cuda else "cpu"
-    gpu_name = torch.cuda.get_device_name(0) if has_cuda else "CPU Only"
+    # Kiem tra GPU (CUDA cho Windows/Linux hoặc MPS cho macOS Apple Silicon)
+    if torch.cuda.is_available():
+        device = 0
+        gpu_name = torch.cuda.get_device_name(0)
+    elif torch.backends.mps.is_available():
+        device = "mps"
+        gpu_name = "Apple Silicon GPU (MPS)"
+    else:
+        device = "cpu"
+        gpu_name = "CPU Only"
 
     print("=" * 65)
     print("Khoi tao Fall Detection Real-time (GPU Accelerated)")
@@ -167,12 +173,13 @@ def run_realtime_fall_detection(cam_index=0, model_path=MODEL_NAME):
     print("Dang tai model YOLO-Pose...")
     model = YOLO(model_path)
 
-    # Warm-up GPU truoc khi vao camera
-    if has_cuda:
+    # Warm-up GPU (CUDA/MPS) truoc khi vao camera
+    if device != "cpu":
         dummy_img = np.zeros((INFERENCE_SIZE, INFERENCE_SIZE, 3), dtype=np.uint8)
         for _ in range(3):
             model.track(dummy_img, persist=True, verbose=False, device=device, imgsz=INFERENCE_SIZE)
-        torch.cuda.synchronize()
+        if device == 0:
+            torch.cuda.synchronize()
 
     # Mo camera voi backend DirectShow de dat FPS toi da tren Windows
     if os.name == 'nt':

@@ -2,41 +2,34 @@
 
 ---
 
-## 1. TỔNG QUAN DỰ ÁN
-- **Tên đề tài/dự án:** Hệ thống nhận diện té ngã thông minh ứng dụng thị giác máy tính và máy trạng thái (Intelligent Multi-Person Fall Detection System using YOLO Pose & MediaPipe + FSM).
-- **Mục tiêu:** Phát hiện sự cố té ngã của con người tự động, theo thời gian thực từ camera/webcam hoặc video giám sát; loại trừ báo động giả (False Alarms); hỗ trợ giám sát đa người (Multi-Person Tracking) và sẵn sàng tích hợp với hệ sinh thái IoT/Cảnh báo khẩn cấp.
+## 1. TỔNG QUAN DỰ ÁN & ĐỀ TÀI
+- **Tên đề tài đề xuất:**
+  - *Hướng Kỹ thuật / Đồ án tốt nghiệp:* **Nghiên cứu và xây dựng hệ thống giám sát, cảnh báo té ngã thời gian thực dựa trên thị giác máy tính và kiến trúc C# .NET**
+  - *Hướng Nghiên cứu Khoa học (NCKH):* **Nghiên cứu phương pháp phát hiện té ngã thời gian thực đa đối tượng sử dụng ước lượng tư thế YOLOv8-Pose kết hợp máy trạng thái hữu hạn (FSM)**
+  - *Tên tiếng Anh:* **Real-time Multi-Person Fall Detection and Emergency Alert System Using YOLOv8-Pose and FSM Integrated with .NET Architecture**
+- **Mục tiêu:** Phát hiện sự cố té ngã của con người tự động, theo thời gian thực từ camera/webcam giám sát; loại trừ báo động giả (False Alarms) khi cúi/ngồi; hỗ trợ giám sát đồng thời nhiều người (Multi-Person Tracking) và tích hợp đẩy dữ liệu cảnh báo khẩn cấp lên Backend C# (.NET Core).
 - **Công nghệ cốt lõi:**
-  - **Ngôn ngữ:** Python 3.x
-  - **Thị giác máy tính (Pose Estimation):** 
-    - **YOLO Pose (YOLOv8-Pose / YOLO11-Pose):** Nhận diện và ước lượng tư thế đa người, hỗ trợ lọc lớp `Person`, độ chính xác cao trong môi trường phức tạp và khoảng cách xa.
-    - **Google MediaPipe Pose:** Giải pháp ước lượng tư thế 33 điểm mốc nhẹ, tối ưu cho thiết bị cấu hình thấp / webcam 1 người.
-  - **Theo dõi đối tượng (Multi-Object Tracking):** ByteTrack / BoT-SORT tích hợp trong YOLO để duy trì định danh (`track_id`) độc lập cho từng người.
-  - **Xử lý hình ảnh & video:** OpenCV (`cv2`), NumPy
-  - **Giải thuật logic:** Heuristic dựa trên góc nghiêng thân người, tốc độ dịch chuyển trọng tâm và Máy trạng thái hữu hạn độc lập cho từng đối tượng (Per-Person Finite State Machine - FSM).
+  - **Module AI Client:** Python 3.x, Ultralytics YOLOv8-Pose / YOLO11-Pose (17 COCO keypoints), OpenCV, PyTorch (CUDA / Apple Silicon MPS), NumPy.
+  - **Theo dõi đối tượng (Multi-Object Tracking):** ByteTrack / BoT-SORT tích hợp trong YOLO duy trì định danh (`track_id`).
+  - **Giải thuật suy luận:** Kết hợp góc nghiêng thân người (Body Angle), tỉ lệ khung bao (Aspect Ratio $W/H$), vận tốc trọng tâm (Centroid Velocity), và Máy trạng thái hữu hạn độc lập (Per-Person FSM).
+  - **Backend & Tích hợp:** C# (.NET Core / ASP.NET Core Web API / SignalR) tiếp nhận bản tin JSON, lưu trữ cơ sở dữ liệu, kích hoạt thông báo (Push Notification / SMS) và truyền dữ liệu lên Web/App Dashboard.
 
 ---
 
 ## 2. CẤU TRÚC THƯ MỤC & CÁC MODULE CHÍNH
 ```text
-d:/NCKH/
-├── .venv/                              # Môi trường ảo Python chung
-└── fall-detection-ai/
-    ├── CONTEXT.md                      # Tài liệu kiến trúc và ngữ cảnh tổng quan dự án
-    ├── REALTIME_CONTEXT.md             # Tài liệu ngữ cảnh chuyên sâu module Real-time Webcam (YOLO-Pose)
-    ├── realtime_yolo_fall_detection.py # Module nhận diện té ngã Real-time qua Webcam (YOLO Pose + Multi-person)
-    ├── yolo_fall_detection.py          # Module YOLOv8m-Pose + Multi-Person Tracking + State Machine (Tối ưu độ chính xác cao)
-    ├── video_fall_detection_yolo.py    # Module YOLO11n-Pose xử lý video đa người
-    ├── mediapipe_test.py               # Module nhận diện té ngã Real-time qua Webcam (MediaPipe Pose)
-    ├── video_fall_detection.py         # Module xử lý video offline qua MediaPipe Pose
-    ├── yolov8m-pose.pt                 # Trọng số mô hình YOLOv8 Medium Pose (~53MB)
-    ├── yolov8n-pose.pt                 # Trọng số mô hình YOLOv8 Nano Pose (~6.8MB)
-    ├── yolo11n-pose.pt                 # Trọng số mô hình YOLO11 Nano Pose (~6.2MB)
-    ├── test/                           # Thư mục chứa video đầu vào và video kết quả annotate
-    │   ├── sample_2.mp4
-    │   ├── sample_2_yolo_output.mp4
-    │   ├── video_1.mp4 ... video_6.mp4
-    │   └── ...
-    └── venv/                           # Môi trường ảo Python của module AI
+fall-detection-ai/
+├── CONTEXT.md                      # Tài liệu kiến trúc và ngữ cảnh tổng quan dự án
+├── REALTIME_CONTEXT.md             # Tài liệu ngữ cảnh chuyên sâu module Real-time Webcam (YOLO-Pose)
+├── realtime_yolo_fall_detection.py # Module nhận diện té ngã Real-time qua Webcam (YOLO Pose + Multi-person)
+├── yolo_fall_detection.py          # Module YOLOv8m-Pose + Multi-Person Tracking + State Machine (Tối ưu độ chính xác cao)
+├── video_fall_detection_yolo.py    # Module YOLO11n-Pose xử lý video đa người
+├── mediapipe_test.py               # Module nhận diện té ngã Real-time qua Webcam (MediaPipe Pose)
+├── video_fall_detection.py         # Module xử lý video offline qua MediaPipe Pose
+├── requirements.txt                # Danh sách thư viện phụ thuộc Python
+├── yolov8m-pose.pt                 # Trọng số mô hình YOLOv8 Medium Pose (~53MB)
+├── yolov8n-pose.pt                 # Trọng số mô hình YOLOv8 Nano Pose (~6.8MB)
+└── yolo11n-pose.pt                 # Trọng số mô hình YOLO11 Nano Pose (~6.2MB)
 ```
 
 ---
@@ -149,11 +142,114 @@ python video_fall_detection.py <duong_dan_input.mp4> <duong_dan_output.mp4>
 
 ---
 
-## 7. ĐỊNH HƯỚNG NÂNG CẤP & MỞ RỘNG (ROADMAP NCKH)
-1. **Module Webcam thời gian thực với YOLO Pose:** Phát triển file `realtime_yolo_fall_detection.py` tối ưu FPS bằng CUDA/TensorRT hoặc OpenVINO.
-2. **Tích hợp IoT & Cloud Gateway:**
-   - Kết nối gửi bản tin cảnh báo qua MQTT Broker (HiveMQ / Mosquitto) hoặc REST API (`POST /api/v1/alerts/fall`) kèm hình ảnh snapshot khi đạt trạng thái `FALL_CONFIRMED`.
-3. **Mô hình chuỗi thời gian (Spatio-Temporal GCN / LSTM):**
-   - Huấn luyện mô hình ST-GCN hoặc LSTM trên chuỗi keypoints của từng người để phân biệt các hành vi phức tạp (tập thể dục, chống đẩy, cúi nhặt đồ, ngồi thiền).
-4. **Giao diện Dashboard Giám Sát:**
-   - Xây dựng Web Dashboard (Streamlit / FastAPI + React) hiển thị live stream các camera và nhật ký cảnh báo té ngã.
+## 8. THÔNG TIN DATASET VÀ MÔ HÌNH HUẤN LUYỆN (DATASET & PRETRAINED MODELS)
+
+### 8.1. Tập dữ liệu huấn luyện mặc định (Default Pretrained Dataset)
+- **Tên Dataset:** **COCO 2017 Keypoint Detection Dataset** (`coco-pose`).
+- **Quy mô dữ liệu:** ~118,287 ảnh huấn luyện (Train), ~5,000 ảnh validation chứa hơn 156,000 đối tượng người ở mọi tư thế thực tế (ngồi, nằm, ngã, đi lại, hoạt động thể thao).
+- **Cấu trúc Keypoints (17 điểm mốc chuẩn COCO):**
+  - Mũi (0), Mắt (1, 2), Tai (3, 4).
+  - Vai trái/phải (5, 6), Khuỷu tay (7, 8), Cổ tay (9, 10).
+  - Hông trái/phải (11, 12), Đầu gối (13, 14), Cổ chân (15, 16).
+- **Trọng số sử dụng trong dự án:**
+  - `yolov8n-pose.pt` (Mô hình Nano: 6.8MB, mAP Pose 50.4%, tối ưu tốc độ 30-60+ FPS).
+  - `yolov8m-pose.pt` (Mô hình Medium: 53MB, độ chính xác cao hơn cho video offline).
+  - `yolo11n-pose.pt` (Mô hình YOLO11 Thế hệ mới: 6.2MB).
+
+### 8.2. Đường link tham khảo chính thức (Official Links)
+- **Ultralytics Pose Documentation:** [https://docs.ultralytics.com/datasets/pose/](https://docs.ultralytics.com/datasets/pose/)
+- **Ultralytics COCO-Pose Guide:** [https://docs.ultralytics.com/datasets/pose/coco/](https://docs.ultralytics.com/datasets/pose/coco/)
+- **COCO Dataset Official:** [https://cocodataset.org/#keypoints-2017](https://cocodataset.org/#keypoints-2017)
+
+---
+
+## 9. ĐỊNH HƯỚNG NÂNG CẤP & MỞ RỘNG (ROADMAP)
+1. **Hoàn thiện module AI Edge Realtime:** Đã hoàn thành trong `realtime_yolo_fall_detection.py` với tối ưu FPS (DirectShow/MJPG + GPU CUDA/MPS), bộ lọc $W/H \ge 0.88$ chống báo động giả.
+2. **Tích hợp Backend C# (.NET Core Web API):** Xây dựng background worker thread bên Python để đẩy sự kiện khẩn cấp sang C# Backend không làm suy giảm FPS camera.
+3. **Phát triển Web/Mobile Dashboard:** C# Backend phát tín hiệu qua SignalR tới giao diện điều hành thời gian thực.
+4. **Mô hình chuỗi thời gian (Spatio-Temporal GCN / LSTM):** Nghiên cứu mở rộng khi cần nhận diện các hành vi tương đồng (nằm tập yoga, nhặt đồ nhiều lần).
+
+---
+
+## 10. THIẾT KẾ GIAO TIẾP VỚI C# BACKEND (.NET CORE)
+
+### 10.1. Chuẩn JSON Payload Cảnh báo Té ngã Khẩn cấp (`POST /api/alerts/fall`)
+Bắn ra khi trạng thái chuyển sang `FALL_CONFIRMED`:
+```json
+{
+  "eventId": "evt_1725453456000",
+  "eventType": "FallConfirmed",
+  "severity": "Critical",
+  "timestamp": "2026-09-04T20:37:35+07:00",
+  "cameraId": "CAM_01",
+  "location": "Living Room",
+  "person": {
+    "trackId": 1,
+    "state": "FALL_CONFIRMED",
+    "bodyAngle": 84.5,
+    "aspectRatio": 2.15,
+    "boundingBox": {
+      "x1": 150,
+      "y1": 320,
+      "x2": 560,
+      "y2": 450
+    }
+  },
+  "snapshotBase64": "data:image/jpeg;base64,..."
+}
+```
+
+### 10.2. Chuẩn JSON Payload Khi Nạn nhân Đứng dậy (`POST /api/alerts/recovered`)
+Bắn ra khi trạng thái chuyển từ `FALL_CONFIRMED` về `NORMAL`:
+```json
+{
+  "eventId": "evt_1725453490000",
+  "eventType": "Recovered",
+  "severity": "Info",
+  "timestamp": "2026-09-04T20:38:10+07:00",
+  "cameraId": "CAM_01",
+  "person": {
+    "trackId": 1,
+    "state": "NORMAL",
+    "bodyAngle": 15.0,
+    "aspectRatio": 0.42
+  }
+}
+```
+
+### 10.3. Mô hình C# DTO Class (ASP.NET Core)
+```csharp
+namespace FallDetectionBackend.DTOs
+{
+    public class FallAlertDto
+    {
+        public string EventId { get; set; } = string.Empty;
+        public string EventType { get; set; } = string.Empty; // "FallConfirmed" | "Recovered"
+        public string Severity { get; set; } = "Critical";
+        public DateTimeOffset Timestamp { get; set; }
+        public string CameraId { get; set; } = string.Empty;
+        public string? Location { get; set; }
+        public PersonDetailDto Person { get; set; } = new();
+        public string? SnapshotBase64 { get; set; }
+    }
+
+    public class PersonDetailDto
+    {
+        public int TrackId { get; set; }
+        public string State { get; set; } = string.Empty;
+        public double BodyAngle { get; set; }
+        public double AspectRatio { get; set; }
+        public BoundingBoxDto? BoundingBox { get; set; }
+    }
+
+    public class BoundingBoxDto
+    {
+        public int X1 { get; set; }
+        public int Y1 { get; set; }
+        public int X2 { get; set; }
+        public int Y2 { get; set; }
+    }
+}
+```
+
+
