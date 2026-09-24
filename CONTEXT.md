@@ -21,12 +21,13 @@
 fall-detection-ai/
 ├── CONTEXT.md                      # Tài liệu kiến trúc và ngữ cảnh tổng quan dự án
 ├── REALTIME_CONTEXT.md             # Tài liệu ngữ cảnh chuyên sâu module Real-time Webcam (YOLO-Pose)
-├── realtime_yolo_fall_detection.py # Module nhận diện té ngã Real-time qua Webcam (YOLO Pose + Multi-person)
+├── realtime_yolo_fall_detection.py # Module nhận diện té ngã Real-time qua Webcam (YOLO26 / YOLOv8 Pose + Multi-person)
 ├── yolo_fall_detection.py          # Module YOLOv8m-Pose + Multi-Person Tracking + State Machine (Tối ưu độ chính xác cao)
 ├── video_fall_detection_yolo.py    # Module YOLO11n-Pose xử lý video đa người
 ├── mediapipe_test.py               # Module nhận diện té ngã Real-time qua Webcam (MediaPipe Pose)
 ├── video_fall_detection.py         # Module xử lý video offline qua MediaPipe Pose
 ├── requirements.txt                # Danh sách thư viện phụ thuộc Python
+├── yolo26n-pose.pt                 # Trọng số mô hình YOLO26 Nano Pose (~7.8MB - NMS-Free SOTA)
 ├── yolov8m-pose.pt                 # Trọng số mô hình YOLOv8 Medium Pose (~53MB)
 ├── yolov8n-pose.pt                 # Trọng số mô hình YOLOv8 Nano Pose (~6.8MB)
 └── yolo11n-pose.pt                 # Trọng số mô hình YOLO11 Nano Pose (~6.2MB)
@@ -90,9 +91,9 @@ stateDiagram-v2
 
 ## 5. THÔNG SỐ CẤU HÌNH HỆ THỐNG (HYPERPARAMETERS)
 
-| Tham số | YOLOv8m (Video Offline) | YOLOv8n (Real-time Webcam) | MediaPipe (Webcam) | Ý nghĩa |
+| Tham số | YOLOv8m (Video Offline) | YOLO26n / YOLOv8n (Real-time Webcam) | MediaPipe (Webcam) | Ý nghĩa |
 | :--- | :--- | :--- | :--- | :--- |
-| `MODEL_NAME` | `yolov8m-pose.pt` | `yolov8n-pose.pt` | `mp.solutions.pose` | Mô hình Pose Estimation sử dụng |
+| `MODEL_NAME` | `yolov8m-pose.pt` | `yolo26n-pose.pt` (Mặc định) / `yolov8n-pose.pt` | `mp.solutions.pose` | Mô hình Pose Estimation sử dụng |
 | `imgsz` | `1280` | `640` | `640x480` | Độ phân giải khung hình đưa vào mạng suy luận |
 | `conf` / `TRACK_CONFIDENCE` | `0.15` | `0.25` | `0.5` | Ngưỡng độ tin cậy để duy trì tracking kể cả khi bị che khuất |
 | `ANGLE_THRESHOLD` | `50°` | `50°` | `50°` | Ngưỡng góc nghiêng xác định tư thế nằm |
@@ -106,11 +107,11 @@ stateDiagram-v2
 
 ### 6.1. Chạy nhận diện trực tiếp qua Webcam (Real-time bằng YOLO Pose - Đa người)
 ```bash
-# Chạy với webcam mặc định (Index 0) và model yolov8n-pose.pt (tốc độ cao)
+# Chạy với webcam mặc định (Index 0) và model mặc định yolo26n-pose.pt (hoặc yolov8n-pose.pt)
 python realtime_yolo_fall_detection.py
 
-# Hoặc chỉ định webcam index và model tùy chọn (vd: yolov8m-pose.pt)
-python realtime_yolo_fall_detection.py 0 yolov8m-pose.pt
+# Hoặc chỉ định webcam index và model tùy chọn (vd: yolo26n-pose.pt, yolov8n-pose.pt, yolov8m-pose.pt)
+python realtime_yolo_fall_detection.py 0 yolo26n-pose.pt
 ```
 - Phím tắt tương tác:
   - `q` hoặc `ESC`: Thoát chương trình.
@@ -152,6 +153,7 @@ python video_fall_detection.py <duong_dan_input.mp4> <duong_dan_output.mp4>
   - Vai trái/phải (5, 6), Khuỷu tay (7, 8), Cổ tay (9, 10).
   - Hông trái/phải (11, 12), Đầu gối (13, 14), Cổ chân (15, 16).
 - **Trọng số sử dụng trong dự án:**
+  - `yolo26n-pose.pt` (Mô hình YOLO26 Nano: ~7.8MB, kiến trúc Native NMS-Free SOTA, loại bỏ DFL, tối ưu độ trễ deterministic và tốc độ cao).
   - `yolov8n-pose.pt` (Mô hình Nano: 6.8MB, mAP Pose 50.4%, tối ưu tốc độ 30-60+ FPS).
   - `yolov8m-pose.pt` (Mô hình Medium: 53MB, độ chính xác cao hơn cho video offline).
   - `yolo11n-pose.pt` (Mô hình YOLO11 Thế hệ mới: 6.2MB).
