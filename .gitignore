@@ -27,3 +27,11 @@ output_*.mp4
 *.pt
 !yolo26n-pose.pt
 !yolov8n-pose.pt
+
+# Keep generated data private, but ship the small trained runtime checkpoint.
+data/*
+!data/gmdcsa24_experiment/
+data/gmdcsa24_experiment/*
+!data/gmdcsa24_experiment/temporal_fall.pt
+
+GMDCSA24-A-Dataset-for-Human-Fall-Detection-in-Videos-v2.0/

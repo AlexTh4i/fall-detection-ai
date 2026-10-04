@@ -289,3 +289,14 @@ connection.start().then(() => console.log("Đã kết nối tới SignalR Hub C#
   - **Mô hình 1 (ESP32-CAM làm Video Streamer):** ESP32-CAM chỉ đảm nhiệm việc thu hình và phát luồng video MJPEG qua Wi-Fi. Máy trạm/Mini PC đóng vai trò Edge Server nhận luồng để chạy YOLO26 và đưa ra quyết định.
   - **Mô hình 2 (ESP32 làm Bộ chấp hành Cảnh báo - Edge Actuator):** Máy tính chạy YOLO26 gửi tín hiệu kích hoạt cảnh báo (qua MQTT/Socket/Serial) đến ESP32 để bật còi báo, đèn chớp khẩn cấp hoặc gửi tin nhắn SOS.
   - **Thiết bị biên thay thế cho xử lý On-Device AI độc lập:** NVIDIA Jetson Orin Nano, Raspberry Pi 5 kết hợp AI Kit (Hailo-8L NPU), hoặc Orange Pi 5 (RK3588 NPU).
+
+
+## 12. C?p nh?t realtime ng?y 2026-10-04: m? h?nh chu?i t? th? th? nghi?m
+
+`realtime_yolo_fall_detection.py` hi?n m?c ??nh ch?y `--mode temporal`: YOLO26-Pose + temporal CNN ?? train t? 160 video GMDCSA24. Checkpoint: `data/gmdcsa24_experiment/temporal_fall.pt`. Ti?n x? l? d?ng chung v?i `gmdcsa_pipeline.py`, t?a ?? pixel ???c chia c?ng m?t h? s? ?? gi? ??ng h?nh h?c. M?i track c? l?ch s? ri?ng, l?y m?u 10 Hz, c?a s? 30 m?u (~3 gi?y), th?m m?t m?u tr??c c?a s? ?? t?nh v?n t?c. ?i?m nghi ng? d?ng ng??ng 0.43 ?? ch?n tr?n Subject 3; kh?ng d?ng lu?t g?c/W-H trong ch? ?? temporal.
+
+C?nh b?o th? nghi?m c?n ?i?m cao duy tr? 1 gi?y. B? l?c n?y ch?a ???c ??nh gi? theo s? ki?n; ?i?m gi?m kh?ng ch?ng minh ng??i ?? ??ng d?y. M?t quan s?t ???c ??nh d?u UNKNOWN. R x?a l?ch s?; F ??i mirror v? x?a l?ch s?. Temporal kh?i ??ng kh?ng mirror ?? ph? h?p d? li?u train.
+
+Ch?y webcam: `.\venv\Scripts\python.exe realtime_yolo_fall_detection.py`. Ch?n webcam 1 b?ng ??i s? `1`. Ch?y FSM c? b?ng `--mode rules`. C? `--video`, `--headless`, `--max-frames` ?? replay ki?m th? kh?ng m? webcam.
+
+Gi?i h?n: test theo video Subject 4 nh?n ra 15/17 Fall, b?o nh?m 4/20 ADL; OBS g?c tr?n cao v?n b? s?t ?o?n ??u. T?ch h?p realtime l? th? nghi?m, kh?ng b?o ??m m?i g?c ho?c nhi?u ng??i. ?? ki?m tra 4 regression tests, t?nh nh?t qu?n ti?n x? l? offline/live v? replay video tr?n GPU. Ch?a ki?m th? webcam tr?c ti?p trong phi?n n?y.
