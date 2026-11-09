@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/black">
+
+    <androidx.camera.view.PreviewView
+        android:id="@+id/previewView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="fitCenter" />
+
+    <!-- Red tint flash when a fall is confirmed -->
+    <View
+        android:id="@+id/alertTint"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#33DC2626"
+        android:visibility="gone" />
+
+    <!-- Top-left: camera name + status -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|start"
+        android:layout_margin="14dp"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <View
+                android:id="@+id/recDot"
+                android:layout_width="10dp"
+                android:layout_height="10dp"
+                android:layout_marginEnd="6dp"
+                android:background="@drawable/dot_red" />
+
+            <TextView
+                android:id="@+id/tvCamera"
+                style="@style/CctvText"
+                android:text="CAMERA 01 · Phòng Khách"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tvStatus"
+            style="@style/CctvText"
+            android:layout_marginTop="6dp"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="3dp"
+            android:text="✔ Bình thường"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Top-right: CCTV clock + location -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|end"
+        android:layout_margin="14dp"
+        android:gravity="end"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tvClock"
+            style="@style/CctvText"
+            android:fontFamily="monospace"
+            android:text="T2 09/11/2026 20:52:31"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvLocation"
+            style="@style/CctvText"
+            android:text="Đà Nẵng, Việt Nam"
+            android:textSize="13sp" />
+    </LinearLayout>
+
+    <!-- Bottom-left: REC -->
+    <TextView
+        style="@style/CctvText"
+        android:layout_gravity="bottom|start"
+        android:layout_margin="14dp"
+        android:text="● REC"
+        android:textSize="13sp" />
+
+    <!-- Bottom-right: server status + settings -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="10dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/tvServer"
+            style="@style/CctvText"
+            android:layout_marginEnd="10dp"
+            android:text="● Server"
+            android:textSize="13sp" />
+
+        <ImageButton
+            android:id="@+id/btnSettings"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@drawable/btn_round"
+            android:contentDescription="Settings"
+            android:src="@android:drawable/ic_menu_preferences" />
+    </LinearLayout>
+</FrameLayout>
+

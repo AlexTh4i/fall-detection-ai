@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <EditText android:id="@+id/etCamera" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:hint="Tên camera (vd: CAMERA 01)" />
+        <EditText android:id="@+id/etCameraId" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:hint="Camera ID gửi Server (vd: CAM_01)" />
+        <EditText android:id="@+id/etRoom" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:hint="Tên phòng (vd: Phòng Khách)" />
+        <EditText android:id="@+id/etLocation" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:hint="Địa điểm (vd: Đà Nẵng, Việt Nam)" />
+        <EditText android:id="@+id/etServer" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:hint="C# Server URL (vd: http://192.168.1.15:5000)"
+            android:inputType="textUri" />
+        <CheckBox android:id="@+id/cbFront" android:layout_width="wrap_content"
+            android:layout_height="wrap_content" android:text="Dùng camera trước" />
+        <CheckBox android:id="@+id/cbSiren" android:layout_width="wrap_content"
+            android:layout_height="wrap_content" android:text="Hú còi trên điện thoại khi té ngã" />
+        <Button android:id="@+id/btnTest" android:layout_width="wrap_content"
+            android:layout_height="wrap_content" android:text="Test kết nối Server" />
+        <Button android:id="@+id/btnReset" android:layout_width="wrap_content"
+            android:layout_height="wrap_content" android:text="Reset trạng thái báo động" />
+    </LinearLayout>
+</ScrollView>
+
